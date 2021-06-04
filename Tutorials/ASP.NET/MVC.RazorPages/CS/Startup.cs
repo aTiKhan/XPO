@@ -1,47 +1,55 @@
-﻿using Microsoft.AspNetCore.Builder;
+using AspNetCoreRazorPagesApplication.DataAccess;
+using AspNetCoreRazorPagesApplication.Helpers;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json.Serialization;
-using XpoTutorial;
+using Microsoft.Extensions.Hosting;
 
 namespace AspNetCoreRazorPagesApplication {
     public class Startup {
         public Startup(IConfiguration configuration) {
             Configuration = configuration;
         }
+
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services) {
+            // Add framework services.
             services
-                .AddMvc()
-                .AddJsonOptions(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+                .AddRazorPages()
+                .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+            // Added lines begin.
             services
                 .AddXpoDefaultUnitOfWork(true, options => options
-                    .UseConnectionString(Configuration.GetConnectionString("ImMemoryDataStore"))
+                    .UseConnectionString(Configuration.GetConnectionString("InMemoryDataStore"))
                     .UseThreadSafeDataLayer(true)
-                    .UseConnectionPool(false) // Remove this line if you use a database server like Sql Server, Oracle, PostgreSql etc.                    
-                    .UseAutoCreationOption(DevExpress.Xpo.DB.AutoCreateOption.DatabaseAndSchema) // Remove this line if the database already exists
+                    .UseConnectionPool(false) // Remove this line if you use a database server like SQL Server, Oracle, PostgreSql etc.                    
+                    .UseAutoCreationOption(DevExpress.Xpo.DB.AutoCreateOption.DatabaseAndSchema) // Remove this line if the database already exists.
                     .UseEntityTypes(typeof(Customer), typeof(Order)) // Pass all of your persistent object types to this method.
                 );
+            // Added lines end.
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env) {
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
             if(env.IsDevelopment()) {
-                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
+            } else {
+                app.UseExceptionHandler("/Error");
             }
-            else {
-                app.UseExceptionHandler("/Home/Error");
-            }
+
             app.UseStaticFiles();
 
-            app.UseMvc(routes => {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+            app.UseRouting();
+
+            app.UseAuthorization();
+
+            app.UseEndpoints(endpoints => {
+                endpoints.MapControllers();
+                endpoints.MapDefaultControllerRoute();
+                endpoints.MapRazorPages();
             });
 
             //Added lines begin.

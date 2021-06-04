@@ -1,6 +1,5 @@
 ﻿@page "/"
-
-@using XpoTutorial
+@using BlazorServerSideApplication
 @using BlazorServerSideApplication.Services
 
 @inject CustomerService CustomerService
@@ -10,8 +9,7 @@
 
 @if(customers == null) {
     <p><em>Loading...</em></p>
-}
-else {
+} else {
 
     <DxDataGrid Data=@customers KeyFieldName="Oid"
                 AllowDataRowSelection=false PageSize="10" ShowFilterRow=true
@@ -20,7 +18,7 @@ else {
                 RowInserting=@( (values) => OnRowInserting(values, typeof(Customer)) )>
 
         <DxDataGridCommandColumn Width="100px"></DxDataGridCommandColumn>
-        <DxDataGridColumn Field=@nameof(Customer.Oid)></DxDataGridColumn>
+        <DxDataGridColumn Width="100px" Field=@nameof(Customer.Oid) Visible="true" EditorVisible="false"></DxDataGridColumn>
         <DxDataGridColumn Field=@nameof(Customer.FirstName)></DxDataGridColumn>
         <DxDataGridColumn Field=@nameof(Customer.LastName)></DxDataGridColumn>
         <DxDataGridCommandColumn Width="50px">
@@ -49,21 +47,15 @@ else {
                                     RowUpdating=@( (updatingDataItem, values) => OnRowUpdating(updatingDataItem, values))
                                     RowInserting=@( (values) => OnRowInserting(values, typeof(Order)))>
                             <DxDataGridCommandColumn Width="100px"></DxDataGridCommandColumn>
-                            <DxDataGridColumn Field=@nameof(Order.Oid)></DxDataGridColumn>
+                            <DxDataGridColumn Field="@nameof(Order.Oid)" Visible="true" EditorVisible="false">
+                            </DxDataGridColumn>
                             <DxDataGridDateEditColumn Field=@nameof(Order.OrderDate)></DxDataGridDateEditColumn>
                             <DxDataGridColumn Field=@nameof(Order.ProductName)></DxDataGridColumn>
                             <DxDataGridSpinEditColumn Field=@nameof(Order.Freight)></DxDataGridSpinEditColumn>
-                            <DxDataGridColumn Field=@nameof(Order.Customer)>
-                                <DisplayTemplate>
-                                    <span>@(((Order)context).Customer.ContactName)</span>
-                                </DisplayTemplate>
-                                <EditTemplate>
-                                    <DxComboBox Data=@customers TextFieldName="ContactName"
-                                                SelectedItem=@( SelectedCustomer )
-                                                SelectedItemChanged=@( customerReference => OnSelectedItemChanged(customerReference, ((CellEditContext)context)) )>
-                                    </DxComboBox>
-                                </EditTemplate>
-                            </DxDataGridColumn>
+                            <DxDataGridComboBoxColumn Field=@(nameof(Customer)+"!")
+                                                      Data=@customers TextFieldName="ContactName"
+                                                      Caption=@nameof(Customer)>
+                            </DxDataGridComboBoxColumn>
                         </DxDataGrid>
                     }
                 </div>
@@ -87,9 +79,9 @@ else {
     }
     async void OnRowInserting(Dictionary<string, object> values, Type type) {
         if(type == typeof(Customer)) {
+
             await CustomerService.Add(values);
-        }
-        else if(type == typeof(Order)) {
+        } else if(type == typeof(Order)) {
             await OrderService.Add(values, SelectedCustomer.Oid);
         }
         StateHasChanged();
